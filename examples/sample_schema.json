@@ -1,0 +1,65 @@
+{
+  "schema_name": "university",
+  "output": {
+    "formats": ["csv", "sql"],
+    "directory": "out/university"
+  },
+  "entities": [
+    {
+      "name": "Student",
+      "rows": 500,
+      "attributes": [
+        { "name": "student_id", "type": "int", "role": "primary_key" },
+        { "name": "name", "type": "name" },
+        { "name": "email", "type": "email", "unique": true },
+        { "name": "city", "type": "city" },
+        {
+          "name": "age",
+          "type": "int",
+          "distribution": { "kind": "uniform", "min": 18, "max": 30 }
+        }
+      ]
+    },
+    {
+      "name": "Course",
+      "rows": 40,
+      "attributes": [
+        { "name": "course_id", "type": "int", "role": "primary_key" },
+        { "name": "title", "type": "string", "generator": "course_title" },
+        {
+          "name": "credits",
+          "type": "int",
+          "distribution": {
+            "kind": "choice",
+            "values": [2, 4],
+            "weights": [0.2, 0.8]
+          }
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "name": "Enrolls",
+      "type": "many_to_many",
+      "between": ["Student", "Course"],
+      "rows": 1800,
+      "participation": {
+        "Student": "total",
+        "Course": "partial"
+      },
+      "attributes": [
+        {
+          "name": "grade",
+          "type": "string",
+          "distribution": {
+            "kind": "choice",
+            "values": ["A", "B", "C", "D", "F"],
+            "weights": [0.2, 0.35, 0.25, 0.15, 0.05]
+          }
+        },
+        { "name": "semester", "type": "string", "generator": "semester" }
+      ]
+    }
+  ]
+}
