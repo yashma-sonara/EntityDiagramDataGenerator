@@ -24,7 +24,7 @@ class EntitySpec:
     rows: int
     attributes: List[AttributeSpec]
 
-    def primary_key(self) -> AttributeSpec:
+    def primary_key(self) -> "AttributeSpec":
         for attr in self.attributes:
             if attr.role == "primary_key":
                 return attr

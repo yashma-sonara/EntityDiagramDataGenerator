@@ -1,5 +1,5 @@
 import sys
-from parser import parse_schema
+from src.parser import parse_schema
 
 
 def main():
