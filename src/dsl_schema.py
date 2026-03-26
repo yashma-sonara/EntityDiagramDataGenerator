@@ -57,8 +57,7 @@ JSON_SCHEMA = {
                                 },
                                 "unique": {"type": "boolean"},
                                 "generator": {
-                                    "type": "string",
-                                    "enum": ["course_title", "semester", "department"]
+                                    "type": "string"
                                 },
                                 "distribution": {
                                     "type": "object",
@@ -113,6 +112,7 @@ JSON_SCHEMA = {
                             "properties": {
                                 "name": {"type": "string"},
                                 "type": {"type": "string"},
+                                "generator": {"type": "string"},
                                 "distribution": {
                                     "type": "object",
                                     "required": ["kind"],
