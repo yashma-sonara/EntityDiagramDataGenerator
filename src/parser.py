@@ -6,6 +6,7 @@ from src.schema import (
     AttributeSpec, Distribution
 )
 from src.dsl_schema import JSON_SCHEMA
+from src.validators import semantic_validate
 
 
 def _parse_distribution(dist_data: dict) -> Distribution:
@@ -66,9 +67,12 @@ def parse_schema(path: str) -> SchemaSpec:
         for r in data["relationships"]
     ]
 
-    return SchemaSpec(
+    spec = SchemaSpec(
         schema_name=data["schema_name"],
         output=output,
         entities=entities,
         relationships=relationships
     )
+
+    semantic_validate(spec)
+    return spec
