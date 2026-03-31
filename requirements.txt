@@ -2,3 +2,4 @@ jsonschema
 faker
 numpy
 psycopg2-binary
+inflect

@@ -1,6 +1,7 @@
 import sys
 from src.parser import parse_schema
-
+from src.data_generator import generate_dataset
+from src.output import write_outputs
 
 def main():
     if len(sys.argv) < 2:
@@ -16,6 +17,17 @@ def main():
         print(f"  Relationships: {[r.name for r in spec.relationships]}")
         print(f"  Output dir : {spec.output.directory}")
         print(f"  Formats    : {spec.output.formats}")
+
+        print("\nGenerating entity data...")
+        datasets = generate_dataset(spec)
+        for name, rows in datasets.items():
+            print(f"  {name}: {len(rows)} rows generated")
+
+        print(f"\nWriting outputs to '{spec.output.directory}'...")
+        write_outputs(spec, datasets)
+    
+        print("\nData generation completed.")
+        
     except (ValueError, FileNotFoundError) as e:
         print(f"Error: {e}")
         sys.exit(1)
