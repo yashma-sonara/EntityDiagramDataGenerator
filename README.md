@@ -92,7 +92,7 @@ Part 3 Details done below : Qing Yee
 
 - Foreign Key (FK) embedding:
   - Used for one_to_one and one_to_many relationships without attributes.
-  - Adds FK fields to the right-hand entity in `between` parameter in the RelationshipSpec.
+  - Adds FK fields to the right-hand entity in `between` parameter for the RelationshipSpec.
   - Initializes FK fields to `NULL`, then assigns values based on generated pairs.
 
 - Relationship tables:

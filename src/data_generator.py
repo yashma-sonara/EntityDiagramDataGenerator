@@ -1,4 +1,5 @@
 from faker import Faker
+from typing import List, Tuple, Any
 import numpy as np
 import random
 
@@ -183,11 +184,11 @@ def generate_rel_attrs(rel: RelationshipSpec) -> dict:
     return {attr.name: generate_value(attr, fake) for attr in rel.attributes}
 
 
-def should_use_table(rel):
+def should_use_table(rel: RelationshipSpec) -> bool: 
     return rel.type == "many_to_many" or len(rel.attributes) > 0
 
 
-def gen_one_to_one_pairs(ids_a, ids_b, part_a, part_b):
+def gen_one_to_one_pairs(ids_a: List[Any], ids_b: List[Any], part_a: str, part_b: str) -> List[Tuple[Any, Any]]:
     A = list(ids_a)
     B = list(ids_b)
 
@@ -226,7 +227,7 @@ def gen_one_to_one_pairs(ids_a, ids_b, part_a, part_b):
     return pairs
 
 
-def gen_one_to_many_pairs(ids_a, ids_b, part_a, part_b):
+def gen_one_to_many_pairs(ids_a: List[Any], ids_b: List[Any], part_a: str, part_b: str) -> List[Tuple[Any, Any]]:
     # A = one side, B = many side
     pairs = []
     used_b = set()
@@ -271,7 +272,7 @@ def gen_one_to_many_pairs(ids_a, ids_b, part_a, part_b):
     return pairs
 
 
-def gen_many_to_many_pairs(ids_a, ids_b, part_a, part_b, target_rows):
+def gen_many_to_many_pairs(ids_a: List[Any], ids_b: List[Any], part_a: str, part_b: str, target_rows: int) -> List[Tuple[Any, Any]]: 
     pairs = []
     used_pairs = set()
 
@@ -310,7 +311,7 @@ def gen_many_to_many_pairs(ids_a, ids_b, part_a, part_b, target_rows):
     return pairs
 
 
-def assign_fk(pairs, entity_a, entity_b, pk_a,pk_b, datasets):
+def assign_fk(pairs: List[Tuple[Any, Any]], entity_a: str, entity_b: str, pk_a: str, pk_b: str, datasets: dict[str, list[dict]]):
     fk_name = entity_a.lower() + '_' + pk_a
 
     # Initialize all rows with None (to handle partial participation)
@@ -325,7 +326,7 @@ def assign_fk(pairs, entity_a, entity_b, pk_a,pk_b, datasets):
                 break
 
 
-def build_relationship_table(pairs, pk_a, pk_b, rel):
+def build_relationship_table(pairs: List[Tuple[Any, Any]], pk_a: str, pk_b: str, rel: RelationshipSpec) -> dict[str, list[dict]]:
     rows = []
     for a, b in pairs:
         rows.append({
@@ -336,7 +337,7 @@ def build_relationship_table(pairs, pk_a, pk_b, rel):
     return rows
 
 
-def generate_relationship(spec, datasets):
+def generate_relationship(spec: SchemaSpec, datasets: dict[str, list[dict]]) -> dict[str, list[dict]]:
     relationship_data = {}
 
     for rel in spec.relationships:

@@ -1,4 +1,4 @@
-from src.schema import SchemaSpec
+from src.schema import SchemaSpec, RelationshipSpec
 
 
 def semantic_validate(spec: SchemaSpec):
@@ -95,7 +95,7 @@ def _check_relationships(spec: SchemaSpec):
                     )
 
 
-def validate_relationships(spec, datasets):
+def validate_relationships(spec: SchemaSpec, datasets: dict[str, list[dict]]):
     errors = []
 
     entity_map = spec.entity_map()
@@ -120,7 +120,7 @@ def validate_relationships(spec, datasets):
 
     return errors
 
-def validate_one_to_one(rel, datasets, a, b, pk_a, pk_b, part_a, part_b):
+def validate_one_to_one(rel: RelationshipSpec, datasets: dict[str, list[dict]], a: str, b: str, pk_a: str, pk_b: str, part_a: str, part_b: str) -> list[str]:
     errors = []
 
     fk_name = a.lower() + "_" + pk_a
@@ -154,7 +154,7 @@ def validate_one_to_one(rel, datasets, a, b, pk_a, pk_b, part_a, part_b):
 
     return errors
 
-def validate_one_to_many(rel, datasets, a, b, pk_a, pk_b, part_a, part_b):
+def validate_one_to_many(rel: RelationshipSpec, datasets: dict[str, list[dict]], a: str, b: str, pk_a: str, pk_b: str, part_a: str, part_b: str) -> list[str]:
     errors = []
 
     fk_name = a.lower() + "_" + pk_a
@@ -183,7 +183,7 @@ def validate_one_to_many(rel, datasets, a, b, pk_a, pk_b, part_a, part_b):
 
     return errors
 
-def validate_many_to_many(rel, datasets, a, b, pk_a, pk_b, part_a, part_b):
+def validate_many_to_many(rel: RelationshipSpec, datasets: dict[str, list[dict]], a: str, b: str, pk_a: str, pk_b: str, part_a: str, part_b: str) -> list[str]:
     errors = []
 
     table = datasets.get(rel.name, [])

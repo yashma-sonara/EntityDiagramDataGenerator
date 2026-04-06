@@ -32,11 +32,11 @@ def main():
         errors = validate_relationships(spec, datasets)
 
         if errors:
-            print("Relationship validation failed:")
+            print("\nRelationship validation failed:")
             for e in errors:
                 print("-", e)
         else:
-            print("All relationships valid")
+            print("\nAll relationships valid.")
         
     except (ValueError, FileNotFoundError) as e:
         print(f"Error: {e}")
