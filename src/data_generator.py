@@ -350,11 +350,7 @@ def generate_relationship(spec, datasets):
 
         part_a = rel.participation.get(entity_a)
         part_b = rel.participation.get(entity_b)
-
-        # Only create table for relationship set that has attributes
-        # and cardinality constraints of many_to_many
-        use_table = should_use_table(rel)
-
+        
         if rel.type == "one_to_one":
             pairs = gen_one_to_one_pairs(ids_a, ids_b, part_a, part_b)
 
@@ -365,8 +361,9 @@ def generate_relationship(spec, datasets):
             target_rows = rel.rows
             pairs = gen_many_to_many_pairs(ids_a, ids_b, part_a, part_b, target_rows)
 
-
-        if use_table:
+        # Only create table for relationship set that has attributes
+        # and cardinality constraints of many_to_many
+        if should_use_table(rel):
             relationship_data[rel.name] = build_relationship_table(pairs, pk_a, pk_b, rel)
 
         # Update the datasets for the foreign key column
