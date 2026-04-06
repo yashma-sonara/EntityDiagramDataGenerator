@@ -93,3 +93,139 @@ def _check_relationships(spec: SchemaSpec):
                         f"requires at least {ent_rows} relationship rows, "
                         f"but only {rel.rows} requested."
                     )
+
+
+def validate_relationships(spec, datasets):
+    errors = []
+
+    entity_map = spec.entity_map()
+
+    for rel in spec.relationships:
+        a, b = rel.between
+
+        pk_a = entity_map[a].primary_key().name
+        pk_b = entity_map[b].primary_key().name
+
+        part_a = rel.participation.get(a)
+        part_b = rel.participation.get(b)
+
+        if rel.type == "one_to_one":
+            errors += validate_one_to_one(rel, datasets, a, b, pk_a, pk_b, part_a, part_b)
+
+        elif rel.type == "one_to_many":
+            errors += validate_one_to_many(rel, datasets, a, b, pk_a, pk_b, part_a, part_b)
+
+        elif rel.type == "many_to_many":
+            errors += validate_many_to_many(rel, datasets, a, b, pk_a, pk_b, part_a, part_b)
+
+    return errors
+
+def validate_one_to_one(rel, datasets, a, b, pk_a, pk_b, part_a, part_b):
+    errors = []
+
+    fk_name = a.lower() + "_" + pk_a
+
+    b_rows = datasets[b]
+
+    # --- FK validity
+    valid_a_ids = {row[pk_a] for row in datasets[a]}
+
+    for row in b_rows:
+        fk = row.get(fk_name)
+        if fk is not None and fk not in valid_a_ids:
+            errors.append(f"[{rel.name}] invalid FK in {b}: {fk}")
+
+    # --- uniqueness (1:1 constraint)
+    seen = {}
+    for row in b_rows:
+        fk = row.get(fk_name)
+        if fk is None:
+            continue
+        if fk in seen:
+            errors.append(f"[{rel.name}] violates 1:1, A id {fk} mapped multiple times")
+        seen[fk] = True
+
+    # --- total participation check
+    if part_a == "total":
+        used = set(row.get(fk_name) for row in b_rows if row.get(fk_name) is not None)
+        missing = valid_a_ids - used
+        if missing:
+            errors.append(f"[{rel.name}] A total participation violated, missing: {missing}")
+
+    return errors
+
+def validate_one_to_many(rel, datasets, a, b, pk_a, pk_b, part_a, part_b):
+    errors = []
+
+    fk_name = a.lower() + "_" + pk_a
+
+    valid_a = {row[pk_a] for row in datasets[a]}
+    b_rows = datasets[b]
+
+    # --- FK correctness
+    for row in b_rows:
+        fk = row.get(fk_name)
+        if fk is not None and fk not in valid_a:
+            errors.append(f"[{rel.name}] invalid FK in {b}: {fk}")
+
+    # --- B total: every B must have FK
+    if part_b == "total":
+        for row in b_rows:
+            if row.get(fk_name) is None:
+                errors.append(f"[{rel.name}] B total violated: null FK in {b}")
+
+    # --- A total: every A must appear at least once in B
+    if part_a == "total":
+        used_a = {row[fk_name] for row in b_rows if row.get(fk_name) is not None}
+        missing = valid_a - used_a
+        if missing:
+            errors.append(f"[{rel.name}] A total violated, missing: {missing}")
+
+    return errors
+
+def validate_many_to_many(rel, datasets, a, b, pk_a, pk_b, part_a, part_b):
+    errors = []
+
+    table = datasets.get(rel.name, [])
+    if not table:
+        errors.append(f"[{rel.name}] missing relationship table")
+        return errors
+
+    valid_a = {row[pk_a] for row in datasets[a]}
+    valid_b = {row[pk_b] for row in datasets[b]}
+
+    seen = set()
+
+    a_seen = set()
+    b_seen = set()
+
+    for row in table:
+        a_id = row.get(pk_a)
+        b_id = row.get(pk_b)
+
+        # FK checks
+        if a_id not in valid_a:
+            errors.append(f"[{rel.name}] invalid A FK: {a_id}")
+        if b_id not in valid_b:
+            errors.append(f"[{rel.name}] invalid B FK: {b_id}")
+
+        # duplicate check
+        if (a_id, b_id) in seen:
+            errors.append(f"[{rel.name}] duplicate pair {(a_id, b_id)}")
+        seen.add((a_id, b_id))
+
+        a_seen.add(a_id)
+        b_seen.add(b_id)
+
+    # participation
+    if part_a == "total":
+        missing_a = valid_a - a_seen
+        if missing_a:
+            errors.append(f"[{rel.name}] A total violated: {missing_a}")
+
+    if part_b == "total":
+        missing_b = valid_b - b_seen
+        if missing_b:
+            errors.append(f"[{rel.name}] B total violated: {missing_b}")
+
+    return errors
