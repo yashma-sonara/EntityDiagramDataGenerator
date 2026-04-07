@@ -2,6 +2,7 @@ import sys
 from src.parser import parse_schema
 from src.data_generator import generate_dataset
 from src.output import write_outputs
+from src.validators import validate_relationships
 
 def main():
     if len(sys.argv) < 2:
@@ -27,6 +28,15 @@ def main():
         write_outputs(spec, datasets)
     
         print("\nData generation completed.")
+
+        errors = validate_relationships(spec, datasets)
+
+        if errors:
+            print("\nRelationship validation failed:")
+            for e in errors:
+                print("-", e)
+        else:
+            print("\nAll relationships valid.")
         
     except (ValueError, FileNotFoundError) as e:
         print(f"Error: {e}")

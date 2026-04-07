@@ -2,7 +2,8 @@ import csv
 import inflect
 from typing import cast, Any
 from pathlib import Path
-from .schema import SchemaSpec, EntitySpec
+from .schema import SchemaSpec, EntitySpec, RelationshipSpec
+from .data_generator import should_use_table
 
 DSL_TO_PG_TYPE = {
     "int":         "INTEGER",
@@ -83,14 +84,14 @@ def _pg_type(dsl_type: str) -> str:
     return DSL_TO_PG_TYPE.get(dsl_type, "TEXT")
 
 
-def _build_create_table(entity: EntitySpec) -> str:
+def _build_create_table(entity: EntitySpec, spec:SchemaSpec) -> str:
     table = _pluralize(entity.name)
     lines = []
 
     for attr in entity.attributes:
         pg_type = _pg_type(attr.type)
         lines.append(f"    {attr.name} {pg_type} NOT NULL")
-
+    
     try:
         pk = entity.primary_key()
         lines.append(f"    PRIMARY KEY ({pk.name})")
@@ -100,8 +101,21 @@ def _build_create_table(entity: EntitySpec) -> str:
     for attr in entity.attributes:
         if attr.unique and attr.role != "primary_key":
             lines.append(f"    UNIQUE ({attr.name})")
+    
+    for rel in spec.relationships:
+        entity_a, entity_b = rel.between
+        if entity_b == entity.name and not should_use_table(rel):
+            pk_a = spec.entity_map()[entity_a].primary_key()
+            fk_col_name = f"{entity_a.lower()}_{pk_a.name}"
+            
+            # NOT NULL for total participation
+            lines.append(f"    {fk_col_name} {_pg_type(pk_a.type)} {'NOT NULL' if rel.participation.get(entity_b) == 'total' else ''}")
 
-    # TODO: Add Foreign Key constraints based on relationships
+            # Add the UNIQUE constraint if this is a 1:1 relationship
+            if rel.type == "one_to_one":
+                lines.append(f"    UNIQUE ({fk_col_name})")
+
+            lines.append(f"    FOREIGN KEY ({fk_col_name}) REFERENCES {_pluralize(entity_a)}({pk_a.name})")
 
     body = ",\n".join(lines)
     return (
@@ -121,8 +135,13 @@ def write_schema_sql(spec: SchemaSpec, directory: str):
         f.write(f"-- Schema for: {spec.schema_name}\n")
 
         for entity in spec.entities:
-            f.write(_build_create_table(entity))
+            f.write(_build_create_table(entity, spec))
             f.write("\n")
+        
+        for rel in spec.relationships:
+            if should_use_table(rel):
+                f.write(_build_relationship_table(rel, spec))
+                f.write("\n")
 
     print(f"  [SQL] Schema written to {filepath.as_posix()}")
 
@@ -163,3 +182,49 @@ def write_outputs(spec: SchemaSpec, datasets: dict[str, list[dict]]):
         print(f"\nOutputting '{entity_name}'...")
         if "csv" in formats:
             write_csv(entity_name, rows, directory)
+
+
+def _build_relationship_table(rel: RelationshipSpec, spec: SchemaSpec) -> str:
+    table = _pluralize(rel.name)
+
+    entity_a, entity_b = rel.between
+    pk_a = spec.entity_map()[entity_a].primary_key()
+    pk_b = spec.entity_map()[entity_b].primary_key()
+
+    lines = []
+
+    # FK Columns
+    lines.append(f"    {pk_a.name} {_pg_type(pk_a.type)} NOT NULL")
+    lines.append(f"    {pk_b.name} {_pg_type(pk_b.type)} NOT NULL")
+
+    # Relationship Attributes
+    for attr in rel.attributes:
+        lines.append(f"    {attr.name} {_pg_type(attr.type)} NOT NULL")
+
+    # PK logic
+    if rel.type == "many_to_many":
+        # M:N → composite key
+        lines.append(f"    PRIMARY KEY ({pk_a.name}, {pk_b.name})")
+
+    elif rel.type == "one_to_many":
+        # PK should be the MANY side (entity_b)
+        lines.append(f"    PRIMARY KEY ({pk_b.name})")
+
+    elif rel.type == "one_to_one":
+        lines.append(f"    PRIMARY KEY ({pk_b.name})")
+        lines.append(f"    UNIQUE ({pk_a.name})")
+
+    # FOREIGN KEYS
+    lines.append(
+        f"    FOREIGN KEY ({pk_a.name}) REFERENCES {_pluralize(entity_a)}({pk_a.name})"
+    )
+    lines.append(
+        f"    FOREIGN KEY ({pk_b.name}) REFERENCES {_pluralize(entity_b)}({pk_b.name})"
+    )
+
+    body = ",\n".join(lines)
+
+    return (
+        f"-- Relationship Table: {_pluralize(table)}\n"
+        f"CREATE TABLE IF NOT EXISTS {_pluralize(table)} (\n{body}\n);\n"
+    )
