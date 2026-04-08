@@ -78,6 +78,7 @@ Part 2 Details done below : Xuan Xuan
 - SQL output maps DSL types to PostgreSQL types and pluralizes entity names for table names using `inflect`.
 
 Part 3 Details done below : Qing Yee
+
 `src/relationship_generator.py` handles relationship generation logic:
 
 - Supports `binary` relationships only.
@@ -105,7 +106,7 @@ Part 3 Details done below : Qing Yee
       - `1:1` → PK is single FK, with `UNIQUE` constraint on the other.
       - `N:M` → composite primary key.
 
-  `src/validators.py` to check for cardinality and participation constraints.
+`src/validators.py` to check for cardinality and participation constraints.
 
 ## Supported Custom Generators
 
