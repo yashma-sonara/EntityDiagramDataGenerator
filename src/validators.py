@@ -127,7 +127,7 @@ def validate_one_to_one(rel: RelationshipSpec, datasets: dict[str, list[dict]], 
 
     b_rows = datasets[b]
 
-    # --- FK validity
+    # FK validity
     valid_a_ids = {row[pk_a] for row in datasets[a]}
 
     for row in b_rows:
@@ -135,7 +135,7 @@ def validate_one_to_one(rel: RelationshipSpec, datasets: dict[str, list[dict]], 
         if fk is not None and fk not in valid_a_ids:
             errors.append(f"[{rel.name}] invalid FK in {b}: {fk}")
 
-    # --- uniqueness (1:1 constraint)
+    # uniqueness (1:1 constraint)
     seen = {}
     for row in b_rows:
         fk = row.get(fk_name)
@@ -145,7 +145,7 @@ def validate_one_to_one(rel: RelationshipSpec, datasets: dict[str, list[dict]], 
             errors.append(f"[{rel.name}] violates 1:1, A id {fk} mapped multiple times")
         seen[fk] = True
 
-    # --- total participation check
+    # total participation check
     if part_a == "total":
         used = set(row.get(fk_name) for row in b_rows if row.get(fk_name) is not None)
         missing = valid_a_ids - used
@@ -162,19 +162,19 @@ def validate_one_to_many(rel: RelationshipSpec, datasets: dict[str, list[dict]],
     valid_a = {row[pk_a] for row in datasets[a]}
     b_rows = datasets[b]
 
-    # --- FK correctness
+    # FK correctness
     for row in b_rows:
         fk = row.get(fk_name)
         if fk is not None and fk not in valid_a:
             errors.append(f"[{rel.name}] invalid FK in {b}: {fk}")
 
-    # --- B total: every B must have FK
+    # B total: every B must have FK
     if part_b == "total":
         for row in b_rows:
             if row.get(fk_name) is None:
                 errors.append(f"[{rel.name}] B total violated: null FK in {b}")
 
-    # --- A total: every A must appear at least once in B
+    # A total: every A must appear at least once in B
     if part_a == "total":
         used_a = {row[fk_name] for row in b_rows if row.get(fk_name) is not None}
         missing = valid_a - used_a
