@@ -67,7 +67,8 @@ def sample_numeric(dist: Distribution) -> float:
     if kind == "uniform":
         return np.random.uniform(params["min"], params["max"])
     if kind == "normal":
-        return np.random.normal(params["mean"], params["std"])
+        value = np.random.normal(params["mean"], params["std"])
+        return np.clip(value, params["min"], params["max"])
     if kind == "poisson":
         return np.random.poisson(params["lam"])
 
@@ -276,7 +277,7 @@ def gen_many_to_many_pairs(ids_a: List[Any], ids_b: List[Any], part_a: str, part
     pairs = []
     used_pairs = set()
 
-    # CASE 1: A total
+    # Case 1: A total
     # Every A must appear at least once
     if part_a == "total":
         for a in ids_a:
@@ -286,7 +287,7 @@ def gen_many_to_many_pairs(ids_a: List[Any], ids_b: List[Any], part_a: str, part
                 used_pairs.add(pair)
                 pairs.append(pair)
 
-    # CASE 2: B total 
+    # Case 2: B total 
     # Every B must appear at least once
     if part_b == "total":
         used_b = {b for _, b in pairs}
