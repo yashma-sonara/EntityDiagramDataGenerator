@@ -1,0 +1,112 @@
+{
+  "schema_name": "corporate",
+  "output": {
+    "formats": ["csv", "sql"],
+    "directory": "out/corporate"
+  },
+  "entities": [
+    {
+      "name": "Employee",
+      "rows": 200,
+      "attributes": [
+        { "name": "emp_id", "type": "int", "role": "primary_key" },
+        { "name": "name", "type": "name" },
+        { "name": "email", "type": "email", "unique": true },
+        { "name": "salary", "type": "int", "distribution": { "kind": "normal", "mean": 5500, "std": 2000, "min": 2500, "max": 25000 } }
+      ]
+    },
+    {
+      "name": "Department",
+      "rows": 10,
+      "attributes": [
+        { "name": "dept_id", "type": "int", "role": "primary_key" },
+        { 
+          "name": "dept_name", 
+          "type": "string",
+          "distribution": {
+            "kind": "choice",
+            "values": ["Engineering", "Marketing", "Sales", "HR", "Finance", "Operations", "IT", "Legal", "Research", "Customer Service"],
+            "weights": [0.2, 0.1, 0.15, 0.08, 0.12, 0.1, 0.1, 0.05, 0.05, 0.05]
+          }
+        },
+        { "name": "budget", "type": "int", "distribution": { "kind": "uniform", "min": 500000, "max": 2000000 } }
+      ]
+    },
+    {
+      "name": "Project",
+      "rows": 50,
+      "attributes": [
+        { "name": "project_id", "type": "int", "role": "primary_key" },
+        { 
+          "name": "project_name", 
+          "type": "string",
+          "distribution": {
+            "kind": "choice",
+            "values": ["Apollo Web Platform", "Titan Mobile App", "Phoenix Analytics", "Orion Cloud Migration", "Atlas Data Pipeline", "Nova AI Assistant", "Eclipse Security Suite", "Comet CRM System", "Vega Inventory Manager", "Sirius Reporting Tool", "Ursa Customer Portal", "Draco Workflow Engine", "Lyra Collaboration Hub", "Hydra API Gateway", "Cassiopeia Dashboard", "Andromeda E-commerce", "Pegasus Payment System", "Centaurus ML Model", "Corona Video Platform", "Aurora Design System"],
+            "weights": [0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05]
+          }
+        },
+        { "name": "start_date", "type": "date" },
+        { "name": "budget", "type": "int", "distribution": { "kind": "uniform", "min": 10000, "max": 500000 } }
+      ]
+    },
+    {
+      "name": "EmployeeBadge",
+      "rows": 200,
+      "attributes": [
+        { "name": "badge_id", "type": "int", "role": "primary_key" },
+        { "name": "badge_number", "type": "string", "unique": true },
+        { "name": "issue_date", "type": "date" },
+        { "name": "expiry_date", "type": "date" }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "name": "WorksOn",
+      "type": "many_to_many",
+      "between": ["Employee", "Project"],
+      "rows": 400,
+      "participation": {
+        "Employee": "partial",
+        "Project": "partial"
+      },
+      "attributes": [
+        {
+          "name": "role",
+          "type": "string",
+          "distribution": {
+            "kind": "choice",
+            "values": ["Developer", "Manager", "Analyst", "Designer", "Tester"],
+            "weights": [0.4, 0.2, 0.15, 0.15, 0.1]
+          }
+        },
+        {
+          "name": "hours_per_week",
+          "type": "int",
+          "distribution": { "kind": "uniform", "min": 10, "max": 40 }
+        }
+      ]
+    },
+    {
+      "name": "DeptManages",
+      "type": "one_to_many",
+      "between": ["Department", "Employee"],
+      "rows": 200,
+      "participation": {
+        "Employee": "total",
+        "Department": "partial"
+      }
+    },
+    {
+      "name": "HasBadge",
+      "type": "one_to_one",
+      "between": ["Employee", "EmployeeBadge"],
+      "rows": 200,
+      "participation": {
+        "Employee": "total",
+        "EmployeeBadge": "total"
+      }
+    }
+  ]
+}
