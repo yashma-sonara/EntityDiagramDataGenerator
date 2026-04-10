@@ -312,8 +312,8 @@ def gen_many_to_many_pairs(ids_a: List[Any], ids_b: List[Any], part_a: str, part
     return pairs
 
 
-def assign_fk(pairs: List[Tuple[Any, Any]], entity_a: str, entity_b: str, pk_a: str, pk_b: str, datasets: dict[str, list[dict]]):
-    fk_name = entity_a.lower() + '_' + pk_a
+def assign_fk(pairs: List[Tuple[Any, Any]], entity_b: str, pk_a: str, pk_b: str, datasets: dict[str, list[dict]]):
+    fk_name = pk_a
 
     # Initialize all rows with None (to handle partial participation)
     for row in datasets[entity_b]:
@@ -371,10 +371,10 @@ def generate_relationship(spec: SchemaSpec, datasets: dict[str, list[dict]]) -> 
         # Update the datasets for the foreign key column
         else:
             if rel.type == "one_to_one":
-                assign_fk(pairs, entity_a, entity_b, pk_a, pk_b, datasets)
+                assign_fk(pairs, entity_b, pk_a, pk_b, datasets)
 
             elif rel.type == "one_to_many":
-                assign_fk(pairs, entity_a, entity_b, pk_a, pk_b, datasets)
+                assign_fk(pairs, entity_b, pk_a, pk_b, datasets)
 
     return relationship_data
 
