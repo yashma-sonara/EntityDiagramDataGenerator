@@ -123,7 +123,7 @@ def validate_relationships(spec: SchemaSpec, datasets: dict[str, list[dict]]):
 def validate_one_to_one(rel: RelationshipSpec, datasets: dict[str, list[dict]], a: str, b: str, pk_a: str, pk_b: str, part_a: str, part_b: str) -> list[str]:
     errors = []
 
-    fk_name = a.lower() + "_" + pk_a
+    fk_name = pk_a
 
     b_rows = datasets[b]
 
@@ -157,7 +157,7 @@ def validate_one_to_one(rel: RelationshipSpec, datasets: dict[str, list[dict]], 
 def validate_one_to_many(rel: RelationshipSpec, datasets: dict[str, list[dict]], a: str, b: str, pk_a: str, pk_b: str, part_a: str, part_b: str) -> list[str]:
     errors = []
 
-    fk_name = a.lower() + "_" + pk_a
+    fk_name = pk_a
 
     valid_a = {row[pk_a] for row in datasets[a]}
     b_rows = datasets[b]
