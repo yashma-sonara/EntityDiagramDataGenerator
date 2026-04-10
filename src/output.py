@@ -106,7 +106,7 @@ def _build_create_table(entity: EntitySpec, spec:SchemaSpec) -> str:
         entity_a, entity_b = rel.between
         if entity_b == entity.name and not should_use_table(rel):
             pk_a = spec.entity_map()[entity_a].primary_key()
-            fk_col_name = f"{entity_a.lower()}_{pk_a.name}"
+            fk_col_name = f"{pk_a.name}"
             
             # NOT NULL for total participation
             lines.append(f"    {fk_col_name} {_pg_type(pk_a.type)} {'NOT NULL' if rel.participation.get(entity_b) == 'total' else ''}")
@@ -126,15 +126,65 @@ def _build_create_table(entity: EntitySpec, spec:SchemaSpec) -> str:
     )
 
 
+def _topological_sort(spec: SchemaSpec) -> list[str]:
+    """
+    Orders entities based on Foreign Key dependencies using Kahn's Algorithm.
+    Ensures parent tables are created/inserted before child tables.
+    """
+    entity_names = [e.name for e in spec.entities]
+
+    dependencies: dict[str, set[str]] = {name: set() for name in entity_names}
+ 
+    for rel in spec.relationships:
+        if not should_use_table(rel):
+            # FK is embedded in entity_b → entity_b depends on entity_a
+            entity_a, entity_b = rel.between
+            if entity_a in dependencies and entity_b in dependencies:
+                dependencies[entity_b].add(entity_a)
+ 
+    in_degree = {name: len(deps) for name, deps in dependencies.items()}
+ 
+    # reverse map: dependents[X] = entities that depend on X
+    dependents: dict[str, list[str]] = {name: [] for name in entity_names}
+    for name, deps in dependencies.items():
+        for dep in deps:
+            dependents[dep].append(name)
+ 
+    # start with entities that have no dependencies
+    queue = [name for name, deg in in_degree.items() if deg == 0]
+    sorted_entities: list[str] = []
+ 
+    while queue:
+        queue.sort()  # deterministic ordering
+        current = queue.pop(0)
+        sorted_entities.append(current)
+        for dependent in dependents[current]:
+            in_degree[dependent] -= 1
+            if in_degree[dependent] == 0:
+                queue.append(dependent)
+ 
+    if len(sorted_entities) != len(entity_names):
+        raise ValueError(
+            "Circular FK dependency detected among entities — "
+            "cannot determine a safe INSERT order."
+        )
+ 
+    return sorted_entities
+
+
 def write_schema_sql(spec: SchemaSpec, directory: str):
     dir_path = Path(directory)
     dir_path.mkdir(parents=True, exist_ok=True)
     filepath = dir_path / "schema.sql"
 
+    sorted_entity_names = _topological_sort(spec)
+    entity_map = spec.entity_map()
+
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(f"-- Schema for: {spec.schema_name}\n")
 
-        for entity in spec.entities:
+        for entity_name in sorted_entity_names:
+            entity = entity_map[entity_name]
             f.write(_build_create_table(entity, spec))
             f.write("\n")
         
@@ -151,19 +201,33 @@ def write_data_sql(spec: SchemaSpec, datasets: dict[str, list[dict]], directory:
     dir_path.mkdir(parents=True, exist_ok=True)
     filepath = dir_path / "data.sql"
 
+    sorted_entity_names = _topological_sort(spec)
+    relationship_names = [
+        rel.name for rel in spec.relationships if should_use_table(rel)
+    ]
+ 
+    insert_order = sorted_entity_names + relationship_names
+
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(f"-- INSERT statements for: {spec.schema_name}\n\n")
+        f.write("BEGIN;\n\n")
 
-        for entity_name, rows in datasets.items():
+        for entity_name in insert_order:
+            rows = datasets.get(entity_name)
             if not rows:
                 continue
-            table = _pluralize(entity_name)
+            if entity_name in relationship_names:
+                table = entity_name.lower()
+            else:
+                table = _pluralize(entity_name) # Only pluralize names for entity tables
             columns = ", ".join(rows[0].keys())
             f.write(f"-- {entity_name}\n")
             for row in rows:
                 values = ", ".join(_sql_value(v) for v in row.values())
                 f.write(f"INSERT INTO {table} ({columns}) VALUES ({values});\n")
             f.write("\n")
+ 
+        f.write("COMMIT;\n")
 
     print(f"  [SQL] Data written to {filepath.as_posix()}")
 
@@ -185,7 +249,7 @@ def write_outputs(spec: SchemaSpec, datasets: dict[str, list[dict]]):
 
 
 def _build_relationship_table(rel: RelationshipSpec, spec: SchemaSpec) -> str:
-    table = _pluralize(rel.name)
+    table = rel.name.lower()
 
     entity_a, entity_b = rel.between
     pk_a = spec.entity_map()[entity_a].primary_key()
