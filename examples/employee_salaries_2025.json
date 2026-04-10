@@ -1,0 +1,61 @@
+{
+  "schema_name": "employee_salary",
+  "output": {
+    "directory": "out/employee_salary",
+    "formats": ["sql", "csv"]
+  },
+  "entities": [
+    {
+      "name": "Department",
+      "rows": 42,
+      "attributes": [
+        { "name": "dept_id", "type": "int", "role": "primary_key" },
+        { "name": "name", "type": "string", "unique": true }
+      ]
+    },
+    {
+      "name": "Employee",
+      "rows": 10632,
+      "attributes": [
+        {
+          "name": "emp_id",
+          "role": "primary_key",
+          "type": "string",
+          "generator": "employee_id"
+        },
+        {
+          "name": "gender",
+          "type": "string",
+          "distribution": {
+            "kind": "choice",
+            "values": ["M", "F"],
+            "weights": [0.58, 0.42]
+          }
+        },
+        {
+          "name": "base_salary",
+          "type": "float",
+          "distribution": {
+            "kind": "normal",
+            "mean": 102169.86,
+            "std": 35061.07,
+            "min": 5947.05,
+            "max": 322000.0
+          }
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "name": "works_in",
+      "type": "one_to_many",
+      "between": ["Department", "Employee"],
+      "rows": 10632,
+      "participation": {
+        "Department": "total",
+        "Employee": "total"
+      }
+    }
+  ]
+}
