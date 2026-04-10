@@ -225,6 +225,6 @@ def _build_relationship_table(rel: RelationshipSpec, spec: SchemaSpec) -> str:
     body = ",\n".join(lines)
 
     return (
-        f"-- Relationship Table: {_pluralize(table)}\n"
-        f"CREATE TABLE IF NOT EXISTS {_pluralize(table)} (\n{body}\n);\n"
+        f"-- Relationship Table: {table}\n"
+        f"CREATE TABLE IF NOT EXISTS {table} (\n{body}\n);\n"
     )
