@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 # Step 1 & 2 — Load Datasets
 # -----------------------------------------------------------------------
 real = pd.read_csv("employee_salaries_2025.csv")
-generated = pd.read_csv("out/eval/Employee.csv")
+generated = pd.read_csv("out/employee_salary/Employee.csv")
 
 # Standardize numerical data types
 real['Base Salary'] = pd.to_numeric(real['Base Salary'], errors="coerce")
