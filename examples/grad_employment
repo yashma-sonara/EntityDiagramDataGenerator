@@ -1,0 +1,66 @@
+{
+  "schema_name": "graduate_employment",
+  "output": {
+    "formats": ["csv", "sql"],
+    "directory": "out/graduate_employment"
+  },
+  "entities": [
+    {
+      "name": "Graduate",
+      "rows": 1550,
+      "attributes": [
+        { "name": "graduate_id", "type": "int", "role": "primary_key" },
+        {
+          "name": "year",
+          "type": "int",
+          "distribution": {
+            "kind": "choice",
+            "values": [2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
+            "weights": [0.06, 0.06, 0.07, 0.07, 0.08, 0.08, 0.08, 0.08, 0.08, 0.09, 0.09, 0.09]
+          }
+        },
+        {
+          "name": "university",
+          "type": "string",
+          "distribution": {
+            "kind": "choice",
+            "values": ["Nanyang Technological University", "National University of Singapore", "Singapore Institute of Technology", "Singapore Management University", "Singapore University of Social Sciences", "Singapore University of Technology and Design"],
+            "weights": [0.309, 0.3084, 0.229, 0.0968, 0.033, 0.024]
+          }
+        },
+        { "name": "degree", "type": "string", "generator": "degree" },
+        {
+          "name": "employment_rate_overall",
+          "type": "float",
+          "distribution": { "kind": "normal", "mean": 91, "std": 6.9, "min": 55, "max": 100 }
+        },
+        {
+          "name": "employment_rate_ft_perm",
+          "type": "float",
+          "distribution": { "kind": "normal", "mean": 72, "std": 10, "min": 14, "max": 100 }
+        },
+        {
+        "name": "gross_monthly_mean",
+        "type": "int",
+        "distribution": { "kind": "normal", "mean": 3945, "std": 794, "min": 2100, "max": 7244 }
+        },
+        {
+        "name": "gross_monthly_median",
+        "type": "int",
+        "distribution": { "kind": "normal", "mean": 3790, "std": 749, "min": 1800, "max": 7000 }
+        },
+        {
+        "name": "gross_mthly_25_percentile",
+        "type": "int",
+        "distribution": { "kind": "normal", "mean": 3389, "std": 600, "min": 1500, "max": 6500 }
+        },
+        {
+        "name": "gross_mthly_75_percentile",
+        "type": "int",
+        "distribution": { "kind": "normal", "mean": 4351, "std": 800, "min": 2500, "max": 9967 }
+        }
+      ]
+    }
+  ],
+  "relationships": []
+}
