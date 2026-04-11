@@ -4,6 +4,7 @@ import numpy as np
 from scipy.stats import ks_2samp
 import time
 import io
+import matplotlib.pyplot as plt
 
 
 # -----------------------------------------------------------------------
@@ -186,3 +187,56 @@ print("-" * 60)
 print(f"OVERALL MAE SCORE: {overall_mae:.4f}")
 print("Interpretation: 0.0 = Perfect match, 1.0 = No similarity")
 print("="*60)
+
+def plot_numeric_hist(real, gen, col, bins=30):
+    plt.figure(figsize=(8, 4))
+
+    plt.hist(real[col].dropna(), bins=bins, alpha=0.5, label="Real", density=True)
+    plt.hist(gen[col].dropna(), bins=bins, alpha=0.5, label="Generated", density=True)
+
+    plt.title(f"Distribution Comparison: {col}")
+    plt.xlabel(col)
+    plt.ylabel("Density")
+    plt.legend()
+
+    plt.tight_layout()
+    plt.show()
+
+def plot_categorical_bar(real, gen, col):
+    real_dist = real[col].value_counts(normalize=True)
+    gen_dist = gen[col].value_counts(normalize=True)
+
+    all_keys = sorted(set(real_dist.index).union(set(gen_dist.index)))
+
+    real_vals = [real_dist.get(k, 0) for k in all_keys]
+    gen_vals = [gen_dist.get(k, 0) for k in all_keys]
+
+    x = np.arange(len(all_keys))
+
+    plt.figure(figsize=(10, 4))
+
+    plt.bar(x - 0.2, real_vals, width=0.4, label="Real")
+    plt.bar(x + 0.2, gen_vals, width=0.4, label="Generated")
+
+    plt.xticks(x, all_keys, rotation=45, ha="right")
+    plt.ylabel("Proportion")
+    plt.title(f"Categorical Distribution: {col}")
+    plt.legend()
+
+    plt.tight_layout()
+    plt.show()
+
+
+# numeric plots
+numeric_cols = [
+    "gross_monthly_mean",
+    "gross_monthly_median",
+    "employment_rate_overall"
+]
+
+for col in numeric_cols:
+    plot_numeric_hist(real, generated, col)
+
+# categorical plots
+plot_categorical_bar(real, generated, "year")
+plot_categorical_bar(real, generated, "university")
