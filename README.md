@@ -42,12 +42,62 @@ Data generation completed.
 All relationships valid.
 ```
 
+#### Example Schemas
+
+Three ready-to-use schemas are included in the `examples/` directory:
+
+| Schema file | Domain | Description |
+|---|---|---|
+| `sample_schema.json` | University | Students, courses, and enrolments |
+| `employee_salaries_2025.json` | HR / Payroll | Employees, departments, and salary data |
+| `grad_employment.json` | Education | Graduate employment survey data |
+| `corporate_schema.json` | Employment | Employees, Managers, Badges |
+
+Run any of them with:
+
+```bash
+python main.py examples/employee_salaries_2025.json
+python main.py examples/grad_employment.json
+...
+```
+
+---
+
+#### Writing Your Own Schema
+
+- Schemas are written in a custom JSON DSL that mirrors ER diagram structure. The format is defined and documented in `src/dsl_schema.py`.
+---
+
 Part 1 Details done below : Yashma
 
-- main.py calls parse_schema
-- parse_schema reads JSON file -> checks against JSON_SCHEMA -> converts into SchemaSpec, EntitySpec, AttributeSpec, RelationshipSpec, OutputSpec python objects
-- schema.py is the main in-memory data model for the python objects
-- main.py prints out parsed
+`main.py` is the entry point. It calls `parse_schema`, prints a structured
+summary of the parsed schema, then passes the result downstream to the
+generator and output writer.
+
+`src/parser.py` handles schema ingestion and validation:
+- Reads the user-supplied JSON file and validates its structure against a
+  JSON meta-schema before any processing begins.
+- On success, recursively constructs a hierarchy of typed Python dataclasses:
+  `SchemaSpec` → `EntitySpec` / `RelationshipSpec` → `AttributeSpec`, `OutputSpec`.
+- Optional fields (`distribution`, `generator`, `unique`, `role`) are defaulted
+  to `None` or `False` if absent, so downstream logic can access every field
+  without additional null checks.
+- Returns a single `SchemaSpec` object that serves as the sole input to the
+  data generator -> all other modules operate on this object, never on raw JSON.
+
+`src/schema.py` defines the in-memory data model:
+- Houses all dataclass definitions (`SchemaSpec`, `EntitySpec`, `AttributeSpec`,
+  `RelationshipSpec`, `OutputSpec`).
+- Acts as the single source of truth for the schema's structure throughout
+  the pipeline.
+
+`src/dsl_schema.py` defines the DSL contract:
+- Specifies how users must describe schemas, entities, attributes, outputs,
+  and relationships in the JSON input.
+- Enforces required fields, allowed data types, valid cardinality strings, and
+  optional generator/distribution configurations.
+- Ensures the input is both structurally well-formed and semantically meaningful
+  before any data is generated through `validators.py`
 
 Part 2 Details done below : Xuan Xuan
 
